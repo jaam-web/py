@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Tienda</title>
+ 
+    <style>
+        /* ...Tus estilos existentes aquí... */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .dolar-price {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #2ecc71;
+            margin: 15px 0;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            min-width: 600px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #2c3e50;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .currency-rate {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .currency-rate input {
+            flex: 1;
+            min-width: 200px;
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .hidden {
+            display: none;
+        }
+        td img {
+             width: 120px;
+             height: auto;
+             display: block;
+             object-fit: contain;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            .currency-rate {
+                flex-direction: column;
+            }
+            .currency-rate input,
+            .currency-rate button {
+                width: 100%;
+            }
+            .actions button {
+                flex: 1 1 100%;
+                margin-bottom: 10px;
+            }
+            td img {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Gestor de Tienda</h1>
+        <div class="dolar-price" id="dolarPriceDisplay">Bs 0.00</div>
+
+        <!-- Sección de Tasa del Dólar -->
+        <div class="currency-rate">
+            <input type="text" id="searchInput" placeholder="Buscar producto..." oninput="buscarProducto()">
+            <button class="btn-primary" onclick="buscarProducto()">🔍 Buscar</button>
+            <input type="number" id="dolarRate" step="0.0001" min="0" placeholder="Tasa del Dólar">
+            <button class="btn-primary" onclick="guardarTasaDolar()">💵 Guardar Tasa</button>
+            <button class="btn-primary" onclick="mostrarFormulario()">➕ Agregar Producto</button>
+        </div>
+
+        <!-- Inventario de Productos -->
+        <div class="section" id="inventorySection">
+            <h2>📦 Inventario de Productos</h2>
+            <div class="table-wrapper">
+                <table id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Precio (USD)</th>
+                            <th>Precio (Bs)</th>
+                            <th>Stock</th>
+                            <th>Foto</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Los productos se cargarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Formulario de Productos -->
+        <div class="section hidden" id="productManagementSection">
+            <h2>Gestión de Productos</h2>
+            <div class="form-group">
+                <label for="productId">Código del Producto:</label>
+                <input type="text" id="productId" placeholder="Ej: PROD-001">
+            </div>
+            <div class="form-group">
+                <label for="productName">Nombre del Producto:</label>
+                <input type="text" id="productName" placeholder="Ej: Cafe ">
+            </div>
+            <div class="form-group">
+                <label for="productCategory">Categoría:</label>
+                <select id="productCategory">
+                    <option value="electronica">Electrónica</option>
+                    <option value="ropa">Ropa</option>
+                    <option value="alimentos">Alimentos</option>
+                    <option value="hogar">Hogar</option>
+                    <option value="otros">Otros</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="productPriceUSD">Precio en USD:</label>
+                <input type="number" id="productPriceUSD" step="0.01" min="0" placeholder="Ej: 34.55">
+            </div>
+            <div class="form-group">
+                <label for="productStock">Cantidad en Stock:</label>
+                <input type="number" id="productStock" min="0" placeholder="Ej: 50">
+            </div>
+            <div class="form-group">
+                <label for="productImage">Subir Imagen del Producto:</label>
+                <input type="file" id="productImage" accept="image/*">
+            </div>
+            
+            <div class="actions">
+                <button class="btn-primary" id="btnAdd" onclick="agregarProducto()">Agregar Producto</button>
+                <button class="btn-success hidden" id="btnUpdate" onclick="actualizarProducto()">Actualizar</button>
+                <button class="btn-danger" id="btnCancel" onclick="cancelarEdicion()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let tasaDolar = 0;
+        let productos = [];
+        let productoEditando = null;
+
+        // Cargar datos al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarTasaDolar();
+            cargarProductos();
+        });
+
+        // Guardar tasa del dólar en la base de datos
+        async function guardarTasaDolar() {
+            const input = document.getElementById('dolarRate');
+            const nuevaTasa = parseFloat(input.value);
+
+            if (isNaN(nuevaTasa) || nuevaTasa <= 0) {
+                alert('Por favor ingrese una tasa válida mayor a cero');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/tasa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tasa: nuevaTasa })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    tasaDolar = data.tasa;
+                    actualizarTasaDisplay();
+                    actualizarTabla();
+                    input.value = '';
+                    alert('Tasa del dólar guardada correctamente');
+                } else {
+                    alert('Error al guardar la tasa');
+                }
+            } catch (error) {
+                alert('Error de red');
+            }
+        }
+
+        // Cargar tasa del dólar desde la base de datos
+        async function cargarTasaDolar() {
+            try {
+                const response = await fetch('/api/tasa');
+                const data = await response.json();
+                tasaDolar = data.tasa || 0;
+                actualizarTasaDisplay();
+            } catch (error) {
+                tasaDolar = 0;
+                actualizarTasaDisplay();
+            }
+        }
+
+        // Mostrar tasa actual
+        function actualizarTasaDisplay() {
+            const precioBs = tasaDolar > 0 ? `1 $ = ${tasaDolar.toFixed(2)} Bs` : 'Bs 0.00';
+            document.getElementById('dolarPriceDisplay').textContent = precioBs;
+        }
+
+        // Mostrar formulario de gestión de productos
+        function mostrarFormulario() {
+            document.getElementById('inventorySection').classList.add('hidden');
+            document.getElementById('productManagementSection').classList.remove('hidden');
+        }
+
+        // Limpiar formulario
+        function limpiarFormulario() {
+            document.getElementById('productId').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('productPriceUSD').value = '';
+            document.getElementById('productStock').value = '';
+            document.getElementById('productImage').value = '';
+            document.getElementById('productId').readOnly = false;
+            document.getElementById('btnAdd').classList.remove('hidden');
+            document.getElementById('btnUpdate').classList.add('hidden');
+            document.getElementById('btnCancel').classList.add('hidden');
+        }
+
+        // Cancelar edición
+        function cancelarEdicion() {
+            productoEditando = null;
+            limpiarFormulario();
+            document.getElementById('productManagementSection').classList.add('hidden');
+            document.getElementById('inventorySection').classList.remove('hidden');
+        }
+
+        // Cargar productos desde la API
+        async function cargarProductos() {
+            try {
+                const response = await fetch('/api/productos');
+                productos = await response.json();
+                actualizarTabla();
+            } catch (error) {
+                productos = [];
+                actualizarTabla();
+                alert('Error al cargar productos');
+            }
+        }
+
+        // Actualizar tabla de productos
+        function actualizarTabla(lista = null) {
+            const tbody = document.querySelector('#productsTable tbody');
+            tbody.innerHTML = '';
+
+            const datos = lista || productos;
+
+            if (datos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No hay productos registrados</td></tr>';
+                return;
+            }
+
+            datos.forEach(producto => {
+                const precioBS = tasaDolar > 0 ? (producto.precioUSD * tasaDolar).toFixed(2) : 'N/A';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${producto.id}</td>
+                    <td>${producto.nombre}</td>
+                    <td>${producto.categoria}</td>
+                    <td>$${producto.precioUSD.toFixed(2)}</td>
+                    <td>${precioBS !== 'N/A' ? 'Bs ' + precioBS : precioBS}</td>
+                    <td>${producto.stock}</td>
+                    <td><img src="${producto.imagen}" alt="${producto.nombre}" style="width: 70px; height: 70px; object-fit: contain;"></td>
+                    <td class="actions">
+                        <button class="btn-primary" onclick="editarProducto('${producto.id}')">Editar</button>
+                        <button class="btn-danger" onclick="eliminarProducto('${producto.id}')">Eliminar</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Agregar nuevo producto
+        function agregarProducto() {
+            const id = document.getElementById('productId').value.trim();
+            const nombre = document.getElementById('productName').value.trim();
+            const categoria = document.getElementById('productCategory').value;
+            const precioUSD = parseFloat(document.getElementById('productPriceUSD').value);
+            const stock = parseInt(document.getElementById('productStock').value);
+            const imagen = document.getElementById('productImage').files[0];
+
+            if (!id || !nombre || isNaN(precioUSD) || precioUSD <= 0 || isNaN(stock) || stock < 0 || !imagen) {
+                alert('Complete todos los campos válidos y suba una imagen');
+                return;
+            }
+
+            if (productos.some(p => p.id === id)) {
+                alert('Ya existe un producto con este código');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const nuevoProducto = {
+                    id,
+                    nombre,
+                    categoria,
+                    precioUSD,
+                    stock,
+                    imagen: e.target.result
+                };
+
+                try {
+                    const response = await fetch('/api/productos', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(nuevoProducto)
+                    });
+                    if (response.ok) {
+                        await cargarProductos();
+                        limpiarFormulario();
+                        document.getElementById('productManagementSection').classList.add('hidden');
+                        document.getElementById('inventorySection').classList.remove('hidden');
+                        alert('Producto agregado correctamente');
+                    } else {
+                        alert('Error al agregar producto');
+                    }
+                } catch (error) {
+                    alert('Error de red');
+                }
+            };
+            reader.readAsDataURL(imagen);
+        }
+
+        // Editar producto
+        function editarProducto(id) {
+            productoEditando = productos.find(p => p.id === id);
+
+            if (!productoEditando) return;
+
+            document.getElementById('productId').value = productoEditando.id;
+            document.getElementById('productName').value = productoEditando.nombre;
+            document.getElementById('productCategory').value = productoEditando.categoria;
+            document.getElementById('productPriceUSD').value = productoEditando.precioUSD;
+            document.getElementById('productStock').value = productoEditando.stock;
+            document.getElementById('productImage').value = '';
+
+            document.getElementById('productId').readOnly = true;
+            document.getElementById('btnAdd').classList.add('hidden');
+            document.getElementById('btnUpdate').classList.remove('hidden');
+            document.getElementById('btnCancel').classList.remove('hidden');
+
+            mostrarFormulario();
+        }
+
+        // Actualizar producto
+        function actualizarProducto() {
+            if (!productoEditando) return;
+
+            const nombre = document.getElementById('productName').value.trim();
+            const categoria = document.getElementById('productCategory').value;
+            const precioUSD = parseFloat(document.getElementById('productPriceUSD').value);
+            const stock = parseInt(document.getElementById('productStock').value);
+            const imagen = document.getElementById('productImage').files[0];
+
+            if (!nombre || isNaN(precioUSD) || precioUSD <= 0 || isNaN(stock) || stock < 0) {
+                alert('Complete todos los campos válidos');
+                return;
+            }
+
+            // Si hay nueva imagen, la leemos, si no, usamos la anterior
+            if (imagen) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    await enviarActualizacionProducto({
+                        ...productoEditando,
+                        nombre,
+                        categoria,
+                        precioUSD,
+                        stock,
+                        imagen: e.target.result
+                    });
+                };
+                reader.readAsDataURL(imagen);
+            } else {
+                enviarActualizacionProducto({
+                    ...productoEditando,
+                    nombre,
+                    categoria,
+                    precioUSD,
+                    stock
+                });
+            }
+        }
+
+        async function enviarActualizacionProducto(productoActualizado) {
+            try {
+                const response = await fetch(`/api/productos/${productoActualizado.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(productoActualizado)
+                });
+                if (response.ok) {
+                    await cargarProductos();
+                    cancelarEdicion();
+                    alert('Producto actualizado correctamente');
+                } else {
+                    alert('Error al actualizar producto');
+                }
+            } catch (error) {
+                alert('Error de red');
+            }
+        }
+
+        // Eliminar producto
+        async function eliminarProducto(id) {
+            if (confirm('¿Está seguro de eliminar este producto?')) {
+                try {
+                    const response = await fetch(`/api/productos/${id}`, {
+                        method: 'DELETE'
+                    });
+                    if (response.ok) {
+                        await cargarProductos();
+                        alert('Producto eliminado correctamente');
+                    } else {
+                        alert('Error al eliminar producto');
+                    }
+                } catch (error) {
+                    alert('Error de red');
+                }
+            }
+        }
+
+        // Buscar producto por nombre o código (en tiempo real)
+        function buscarProducto() {
+            const texto = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (!texto) {
+                actualizarTabla();
+                return;
+            }
+            const filtrados = productos.filter(p =>
+                p.nombre.toLowerCase().includes(texto) ||
+                p.id.toLowerCase().includes(texto)
+            );
+            actualizarTabla(filtrados);
+        }
+
+
+      
+    </script>
+</body>
+</html>
