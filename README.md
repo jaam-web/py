@@ -2,7 +2,6 @@ aqui estaran todos mis programas de python3
 
 # Terminal Web para Termux 🚀
 
-![Terminal Web Screenshot](https://via.placeholder.com/800x400/222/fff?text=Terminal+Web+Termux) *(Reemplazar con screenshot real)*
 
 Un servidor web local que te permite acceder a tu terminal Termux desde cualquier navegador con autenticación segura.
 
@@ -26,3 +25,4 @@ Un servidor web local que te permite acceder a tu terminal Termux desde cualquie
 1. Actualiza paquetes en Termux:
 ```bash
 pkg update && pkg upgrade -y
+pip install tornado
